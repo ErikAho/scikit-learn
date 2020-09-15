@@ -178,11 +178,11 @@ class DictVectorizer(TransformerMixin, BaseEstimator):
 
     def _transform(self, X, fitting):
         # Sanity check: Python's array has no way of explicitly requesting the
-        # signed 32-bit integers that scipy.sparse needs, so we use the next
-        # best thing: typecode "i" (int). However, if that gives larger or
-        # smaller integers than 32-bit ones, np.frombuffer screws up.
-        assert array("i").itemsize == 4, (
-            "sizeof(int) != 4 on your platform; please report this at"
+        # signed 64-bit integers that scipy.sparse needs, so we use the next
+        # best thing: typecode "l" (long). However, if that gives larger or
+        # smaller integers than 64-bit ones, np.frombuffer screws up.
+        assert array("l").itemsize == 8, (
+            "sizeof(long) != 8 on your platform; please report this at"
             " https://github.com/scikit-learn/scikit-learn/issues and"
             " include the output from platform.platform() in your bug report")
 
@@ -199,7 +199,7 @@ class DictVectorizer(TransformerMixin, BaseEstimator):
         # Process everything as sparse regardless of setting
         X = [X] if isinstance(X, Mapping) else X
 
-        indices = array("i")
+        indices = array("l")
         indptr = [0]
         # XXX we could change values to an array.array as well, but it
         # would require (heuristic) conversion of dtype to typecode...
@@ -239,7 +239,7 @@ class DictVectorizer(TransformerMixin, BaseEstimator):
         if len(indptr) == 1:
             raise ValueError("Sample sequence X is empty.")
 
-        indices = np.frombuffer(indices, dtype=np.intc)
+        indices = np.frombuffer(indices, dtype=np.int_)
         shape = (len(indptr) - 1, len(vocab))
 
         result_matrix = sp.csr_matrix((values, indices, indptr),
@@ -248,7 +248,7 @@ class DictVectorizer(TransformerMixin, BaseEstimator):
         # Sort everything if asked
         if fitting and self.sort:
             feature_names.sort()
-            map_index = np.empty(len(feature_names), dtype=np.int32)
+            map_index = np.empty(len(feature_names), dtype=np.int64)
             for new_val, f in enumerate(feature_names):
                 map_index[new_val] = vocab[f]
                 vocab[f] = new_val
